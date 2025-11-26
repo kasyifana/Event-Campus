@@ -12,7 +12,7 @@ import (
 
 // RegistrationUsecase defines interface for registration business logic
 type RegistrationUsecase interface {
-	RegisterForEvent(ctx context.Context, userID, eventID uuid.UUID) error
+	RegisterForEvent(ctx context.Context, userID, eventID uuid.UUID) (*domain.Registration, error)
 	CancelRegistration(ctx context.Context, userID, registrationID uuid.UUID) error
 	GetMyRegistrations(ctx context.Context, userID uuid.UUID) ([]domain.Registration, error)
 	GetEventRegistrations(ctx context.Context, organizerID, eventID uuid.UUID) ([]domain.Registration, error)
@@ -40,41 +40,41 @@ func NewRegistrationUsecase(
 	}
 }
 
-func (u *registrationUsecase) RegisterForEvent(ctx context.Context, userID, eventID uuid.UUID) error {
+func (u *registrationUsecase) RegisterForEvent(ctx context.Context, userID, eventID uuid.UUID) (*domain.Registration, error) {
 	// Get event
 	event, err := u.eventRepo.GetByID(ctx, eventID)
 	if err != nil {
-		return fmt.Errorf("event not found")
+		return nil, fmt.Errorf("event not found")
 	}
 
 	// Check if event can accept registrations
 	if !event.CanRegister() {
-		return fmt.Errorf("registration is closed for this event")
+		return nil, fmt.Errorf("registration is closed for this event")
 	}
 
 	// Get user
 	user, err := u.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("user not found")
+		return nil, fmt.Errorf("user not found")
 	}
 
 	// Check if event is UII only
 	if event.IsUIIOnly && !user.IsUIICivitas {
-		return fmt.Errorf("this event is only for UII civitas")
+		return nil, fmt.Errorf("this event is only for UII civitas")
 	}
 
 	// Check if already registered
 	existingReg, err := u.registrationRepo.GetByUserAndEvent(ctx, userID, eventID)
 	if err != nil {
-		return fmt.Errorf("failed to check existing registration: %w", err)
+		return nil, fmt.Errorf("failed to check existing registration: %w", err)
 	}
 
 	if existingReg != nil && !existingReg.IsCancelled() {
 		if existingReg.IsRegistered() {
-			return fmt.Errorf("you are already registered for this event")
+			return nil, fmt.Errorf("you are already registered for this event")
 		}
 		if existingReg.IsWaitlist() {
-			return fmt.Errorf("you are already in the waitlist for this event")
+			return nil, fmt.Errorf("you are already in the waitlist for this event")
 		}
 	}
 
@@ -93,13 +93,13 @@ func (u *registrationUsecase) RegisterForEvent(ctx context.Context, userID, even
 	}
 
 	if err := u.registrationRepo.Create(ctx, registration); err != nil {
-		return fmt.Errorf("failed to create registration: %w", err)
+		return nil, fmt.Errorf("failed to create registration: %w", err)
 	}
 
 	// Increment participant count if registered (not waitlisted)
 	if status == domain.RegistrationStatusRegistered {
 		if err := u.eventRepo.IncrementParticipants(ctx, eventID); err != nil {
-			return fmt.Errorf("failed to update participant count: %w", err)
+			return nil, fmt.Errorf("failed to update participant count: %w", err)
 		}
 
 		// Send confirmation email
@@ -124,7 +124,7 @@ func (u *registrationUsecase) RegisterForEvent(ctx context.Context, userID, even
 		}
 	}
 
-	return nil
+	return registration, nil
 }
 
 func (u *registrationUsecase) CancelRegistration(ctx context.Context, userID, registrationID uuid.UUID) error {

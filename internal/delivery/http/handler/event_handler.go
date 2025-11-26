@@ -27,8 +27,8 @@ func NewEventHandler(eventUsecase usecase.EventUsecase, fileUploader *utils.File
 // CreateEvent handles event creation
 func (h *EventHandler) CreateEvent(c *gin.Context) {
 	// Get organizer ID from context
-	organizerIDStr, _ := c.Get("userID")
-	organizerID, _ := uuid.Parse(organizerIDStr.(string))
+	organizerIDInterface, _ := c.Get("userID")
+	organizerID, _ := organizerIDInterface.(uuid.UUID)
 
 	// Parse JSON request
 	var req request.CreateEventRequest
@@ -42,7 +42,8 @@ func (h *EventHandler) CreateEvent(c *gin.Context) {
 	}
 
 	// Create event (poster can be uploaded separately)
-	if err := h.eventUsecase.CreateEvent(c.Request.Context(), organizerID, &req, nil); err != nil {
+	event, err := h.eventUsecase.CreateEvent(c.Request.Context(), organizerID, &req, nil)
+	if err != nil {
 		c.JSON(400, gin.H{
 			"success": false,
 			"message": "Failed to create event",
@@ -54,6 +55,9 @@ func (h *EventHandler) CreateEvent(c *gin.Context) {
 	c.JSON(201, gin.H{
 		"success": true,
 		"message": "Event created successfully",
+		"data": gin.H{
+			"id": event.ID,
+		},
 	})
 }
 
@@ -123,8 +127,8 @@ func (h *EventHandler) GetEvent(c *gin.Context) {
 
 // GetMyEvents gets organizer's events
 func (h *EventHandler) GetMyEvents(c *gin.Context) {
-	organizerIDStr, _ := c.Get("userID")
-	organizerID, _ := uuid.Parse(organizerIDStr.(string))
+	organizerIDInterface, _ := c.Get("userID")
+	organizerID, _ := organizerIDInterface.(uuid.UUID)
 
 	events, err := h.eventUsecase.GetMyEvents(c.Request.Context(), organizerID)
 	if err != nil {
@@ -145,8 +149,8 @@ func (h *EventHandler) GetMyEvents(c *gin.Context) {
 
 // UpdateEvent handles event update
 func (h *EventHandler) UpdateEvent(c *gin.Context) {
-	organizerIDStr, _ := c.Get("userID")
-	organizerID, _ := uuid.Parse(organizerIDStr.(string))
+	organizerIDInterface, _ := c.Get("userID")
+	organizerID, _ := organizerIDInterface.(uuid.UUID)
 
 	eventIDStr := c.Param("id")
 	eventID, err := uuid.Parse(eventIDStr)
@@ -185,8 +189,8 @@ func (h *EventHandler) UpdateEvent(c *gin.Context) {
 
 // UploadPoster handles poster upload
 func (h *EventHandler) UploadPoster(c *gin.Context) {
-	organizerIDStr, _ := c.Get("userID")
-	organizerID, _ := uuid.Parse(organizerIDStr.(string))
+	organizerIDInterface, _ := c.Get("userID")
+	organizerID, _ := organizerIDInterface.(uuid.UUID)
 
 	eventIDStr := c.Param("id")
 	eventID, err := uuid.Parse(eventIDStr)
@@ -255,8 +259,8 @@ func (h *EventHandler) UploadPoster(c *gin.Context) {
 
 // DeleteEvent handles event deletion
 func (h *EventHandler) DeleteEvent(c *gin.Context) {
-	organizerIDStr, _ := c.Get("userID")
-	organizerID, _ := uuid.Parse(organizerIDStr.(string))
+	organizerIDInterface, _ := c.Get("userID")
+	organizerID, _ := organizerIDInterface.(uuid.UUID)
 
 	eventIDStr := c.Param("id")
 	eventID, err := uuid.Parse(eventIDStr)
@@ -285,8 +289,8 @@ func (h *EventHandler) DeleteEvent(c *gin.Context) {
 
 // PublishEvent handles event publishing
 func (h *EventHandler) PublishEvent(c *gin.Context) {
-	organizerIDStr, _ := c.Get("userID")
-	organizerID, _ := uuid.Parse(organizerIDStr.(string))
+	organizerIDInterface, _ := c.Get("userID")
+	organizerID, _ := organizerIDInterface.(uuid.UUID)
 
 	eventIDStr := c.Param("id")
 	eventID, err := uuid.Parse(eventIDStr)

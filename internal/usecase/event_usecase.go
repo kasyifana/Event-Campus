@@ -14,7 +14,7 @@ import (
 
 // EventUsecase defines interface for event business logic
 type EventUsecase interface {
-	CreateEvent(ctx context.Context, organizerID uuid.UUID, req *request.CreateEventRequest, posterPath *string) error
+	CreateEvent(ctx context.Context, organizerID uuid.UUID, req *request.CreateEventRequest, posterPath *string) (*domain.Event, error)
 	GetEvent(ctx context.Context, id uuid.UUID) (*response.EventResponse, error)
 	GetAllEvents(ctx context.Context, filters map[string]interface{}) ([]response.EventResponse, error)
 	GetMyEvents(ctx context.Context, organizerID uuid.UUID) ([]response.EventResponse, error)
@@ -42,32 +42,32 @@ func NewEventUsecase(
 	}
 }
 
-func (u *eventUsecase) CreateEvent(ctx context.Context, organizerID uuid.UUID, req *request.CreateEventRequest, posterPath *string) error {
+func (u *eventUsecase) CreateEvent(ctx context.Context, organizerID uuid.UUID, req *request.CreateEventRequest, posterPath *string) (*domain.Event, error) {
 	// Validate dates
 	if req.StartDate.Before(time.Now()) {
-		return fmt.Errorf("start date must be in the future")
+		return nil, fmt.Errorf("start date must be in the future")
 	}
 
 	if req.EndDate.Before(req.StartDate) {
-		return fmt.Errorf("end date must be after start date")
+		return nil, fmt.Errorf("end date must be after start date")
 	}
 
 	if req.RegistrationDeadline.After(req.StartDate) {
-		return fmt.Errorf("registration deadline must be before start date")
+		return nil, fmt.Errorf("registration deadline must be before start date")
 	}
 
 	// Validate capacity
 	if req.MaxParticipants <= 0 {
-		return fmt.Errorf("max participants must be greater than 0")
+		return nil, fmt.Errorf("max participants must be greater than 0")
 	}
 
 	// Validate event type and location/zoom link
 	if req.EventType == domain.EventTypeOffline && (req.Location == nil || *req.Location == "") {
-		return fmt.Errorf("location is required for offline events")
+		return nil, fmt.Errorf("location is required for offline events")
 	}
 
 	if req.EventType == domain.EventTypeOnline && (req.ZoomLink == nil || *req.ZoomLink == "") {
-		return fmt.Errorf("zoom link is required for online events")
+		return nil, fmt.Errorf("zoom link is required for online events")
 	}
 
 	// Create event
@@ -89,10 +89,10 @@ func (u *eventUsecase) CreateEvent(ctx context.Context, organizerID uuid.UUID, r
 	}
 
 	if err := u.eventRepo.Create(ctx, event); err != nil {
-		return fmt.Errorf("failed to create event: %w", err)
+		return nil, fmt.Errorf("failed to create event: %w", err)
 	}
 
-	return nil
+	return event, nil
 }
 
 func (u *eventUsecase) GetEvent(ctx context.Context, id uuid.UUID) (*response.EventResponse, error) {
@@ -173,7 +173,7 @@ func (u *eventUsecase) UpdateEvent(ctx context.Context, organizerID uuid.UUID, e
 
 	// Validate dates if provided
 	if req.StartDate != nil {
-		if req.StartDate.Before(time.Now()) {
+		if req.StartDate.Before(time.Now()) && event.Status == domain.StatusDraft {
 			return fmt.Errorf("start date must be in the future")
 		}
 		event.StartDate = *req.StartDate

@@ -229,7 +229,9 @@ Get list of events with filtering and pagination.
 **Query Parameters:**
 - `category` (optional): `seminar` | `workshop` | `lomba` | `konser`
 - `status` (optional): `draft` | `published` | `ongoing` | `completed` | `cancelled`
+- `event_type` (optional): `online` | `offline`
 - `is_uii_only` (optional): `true` | `false`
+- `search` (optional): Search in title and description
 - `start_date` (optional): ISO 8601 date
 - `end_date` (optional): ISO 8601 date
 - `page` (optional): Default 1
@@ -237,7 +239,7 @@ Get list of events with filtering and pagination.
 
 **Example:**
 ```
-GET /events?category=seminar&status=published&page=1&limit=10
+GET /events?category=seminar&status=published&search=AI&page=1&limit=10
 ```
 
 **Response (200 OK):**
@@ -281,6 +283,48 @@ GET /events?category=seminar&status=published&page=1&limit=10
   }
 }
 ```
+
+---
+
+### Get My Events
+
+Get list of events created by current organizer.
+
+**Endpoint:** `GET /events/my-events`
+
+**Access:** Protected (Organisasi, Admin only)
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Events retrieved successfully",
+  "data": [
+    {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "title": "Workshop AI untuk Pemula",
+      "category": "workshop",
+      "event_type": "online",
+      "status": "published",
+      "start_date": "2024-01-20T10:00:00Z",
+      "end_date": "2024-01-20T12:00:00Z",
+      "current_participants": 45,
+      "max_participants": 100,
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-15T10:00:00Z"
+    }
+  ]
+}
+```
+
+**Notes:**
+- Returns all events created by the authenticated organizer
+- Includes events in all statuses (draft, published, etc.)
 
 ---
 
@@ -386,6 +430,56 @@ poster: <file.jpg>
 
 ---
 
+### Upload Event Poster
+
+Upload or update poster image for a specific event.
+
+**Endpoint:** `POST /events/:id/poster`
+
+**Access:** Protected (Event Owner or Admin)
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+**Request Body (multipart/form-data):**
+```
+poster: <file.jpg>
+```
+
+**Validation:**
+- Format: JPG, JPEG, or PNG only
+- Max size: 5MB
+- Event must exist and user must be the owner or admin
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Poster uploaded successfully",
+  "data": {
+    "poster_path": "posters/abc123.jpg"
+  }
+}
+```
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "success": false,
+  "message": "Invalid file type. Only JPG and PNG are allowed"
+}
+```
+
+**Notes:**
+- Replaces existing poster if one already exists
+- Old poster file is automatically deleted
+- Poster URL will be updated in event details
+
+---
+
 ### Update Event
 
 Update an existing event.
@@ -426,6 +520,44 @@ poster: <new_file.jpg>
   }
 }
 ```
+
+---
+
+### Publish Event
+
+Publish an event (change status from draft to published).
+
+**Endpoint:** `POST /events/:id/publish`
+
+**Access:** Protected (Event Owner or Admin)
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Event published successfully"
+}
+```
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "success": false,
+  "message": "Failed to publish event",
+  "error": "Event must have all required fields including poster"
+}
+```
+
+**Notes:**
+- Event must have all required fields filled
+- Event must have a poster uploaded
+- Published events become visible to all users
+- Cannot unpublish an event once published
 
 ---
 
@@ -776,6 +908,53 @@ document: <file.pdf>
 
 ---
 
+### Get My Whitelist Request
+
+Get current user's whitelist request status.
+
+**Endpoint:** `GET /whitelist/my-request`
+
+**Access:** Protected (Mahasiswa, Organisasi, Admin)
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200 OK) - Has Request:**
+```json
+{
+  "success": true,
+  "message": "Request retrieved successfully",
+  "data": {
+    "id": "456e7890-e89b-12d3-a456-426614174000",
+    "organization_name": "BEM Fakultas Teknik Industri",
+    "document_path": "documents/abc123.pdf",
+    "document_url": "http://localhost:8080/files/documents/abc123.pdf",
+    "status": "pending",
+    "submitted_at": "2024-01-15T10:00:00Z",
+    "admin_notes": null,
+    "reviewed_at": null
+  }
+}
+```
+
+**Response (200 OK) - No Request:**
+```json
+{
+  "success": true,
+  "message": "No request found",
+  "data": null
+}
+```
+
+**Notes:**
+- Returns the most recent whitelist request for current user
+- Shows status: `pending`, `approved`, or `rejected`
+- Includes admin notes if request has been reviewed
+
+---
+
 ### Get All Whitelist Requests
 
 Get all whitelist requests (admin only).
@@ -903,7 +1082,7 @@ Authorization: Bearer <token>
 
 Mark user attendance at event.
 
-**Endpoint:** `POST /attendances`
+**Endpoint:** `POST /events/:id/attendance`
 
 **Access:** Protected (Event Owner or Admin)
 
@@ -915,7 +1094,7 @@ Authorization: Bearer <token>
 **Request Body:**
 ```json
 {
-  "registration_id": "789e0123-e89b-12d3-a456-426614174000",
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
   "notes": "Hadir tepat waktu"
 }
 ```
@@ -924,13 +1103,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": true,
-  "message": "Attendance marked successfully",
-  "data": {
-    "id": "321e6540-e89b-12d3-a456-426614174000",
-    "registration_id": "789e0123-e89b-12d3-a456-426614174000",
-    "checked_in_at": "2024-01-20T10:05:00Z",
-    "notes": "Hadir tepat waktu"
-  }
+  "message": "Attendance marked successfully"
 }
 ```
 
@@ -938,7 +1111,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": false,
-  "message": "Attendance marking failed",
+  "message": "Failed to mark attendance",
   "error": "User already marked as attended"
 }
 ```
@@ -946,14 +1119,64 @@ Authorization: Bearer <token>
 **Notes:**
 - Registration status otomatis berubah ke `attended`
 - Organisasi hanya bisa mark attendance untuk event sendiri
+- User harus sudah registered ke event
 
 ---
 
-### Get Event Attendances
+### Bulk Mark Attendance
+
+Mark attendance for multiple users at once.
+
+**Endpoint:** `POST /events/:id/attendance/bulk`
+
+**Access:** Protected (Event Owner or Admin)
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Request Body:**
+```json
+{
+  "user_ids": [
+    "550e8400-e29b-41d4-a716-446655440000",
+    "550e8400-e29b-41d4-a716-446655440001",
+    "550e8400-e29b-41d4-a716-446655440002"
+  ]
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Bulk attendance marked successfully for 3 users"
+}
+```
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "success": false,
+  "message": "No valid user IDs provided"
+}
+```
+
+**Notes:**
+- All users' registration status automatically change to `attended`
+- Invalid user IDs are silently skipped
+- Only users already registered to the event will be marked
+- Organisasi can only mark attendance for their own events
+- Useful for marking attendance via QR code scanner or batch import
+
+---
+
+### Get Event Attendance
 
 Get all attendances for an event.
 
-**Endpoint:** `GET /events/:id/attendances`
+**Endpoint:** `GET /events/:id/attendance`
 
 **Access:** Protected (Event Owner or Admin)
 
@@ -1194,10 +1417,13 @@ ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
 ### Version 1.0.0 (Current)
 - ✅ Authentication (register, login)
 - ✅ User profile management
-- 🚧 Event CRUD (planned)
-- 🚧 Event registration (planned)
-- 🚧 Whitelist system (planned)
-- 🚧 Attendance system (planned)
+- ✅ Event CRUD (create, read, update, delete)
+- ✅ Event registration and waitlist
+- ✅ Whitelist system (organisasi approval)
+- ✅ Attendance system (single and bulk)
+- ✅ File upload (posters and documents)
+- ✅ Email notifications
+- ✅ Automated schedulers (H-1 reminders, status updates)
 
 ---
 

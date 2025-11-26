@@ -42,17 +42,14 @@ func (r *attendanceRepository) Create(ctx context.Context, attendance *domain.At
 	attendance.MarkedAt = time.Now()
 
 	query := `
-		INSERT INTO attendances (id, event_id, user_id, registration_id, marked_at, marked_by, notes)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO attendances (id, registration_id, checked_in_at, notes)
+		VALUES ($1, $2, $3, $4)
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
 		attendance.ID,
-		attendance.EventID,
-		attendance.UserID,
 		attendance.RegistrationID,
 		attendance.MarkedAt,
-		attendance.MarkedBy,
 		attendance.Notes,
 	)
 
@@ -65,9 +62,10 @@ func (r *attendanceRepository) Create(ctx context.Context, attendance *domain.At
 
 func (r *attendanceRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Attendance, error) {
 	query := `
-		SELECT id, event_id, user_id, registration_id, marked_at, marked_by, notes
-		FROM attendances
-		WHERE id = $1
+		SELECT a.id, r.event_id, r.user_id, a.registration_id, a.checked_in_at, NULL as marked_by, a.notes
+		FROM attendances a
+		JOIN registrations r ON a.registration_id = r.id
+		WHERE a.id = $1
 	`
 
 	var attendance domain.Attendance
@@ -101,9 +99,10 @@ func (r *attendanceRepository) GetByID(ctx context.Context, id uuid.UUID) (*doma
 
 func (r *attendanceRepository) GetByEventAndUser(ctx context.Context, eventID, userID uuid.UUID) (*domain.Attendance, error) {
 	query := `
-		SELECT id, event_id, user_id, registration_id, marked_at, marked_by, notes
-		FROM attendances
-		WHERE event_id = $1 AND user_id = $2
+		SELECT a.id, r.event_id, r.user_id, a.registration_id, a.checked_in_at, NULL as marked_by, a.notes
+		FROM attendances a
+		JOIN registrations r ON a.registration_id = r.id
+		WHERE r.event_id = $1 AND r.user_id = $2
 	`
 
 	var attendance domain.Attendance
@@ -137,10 +136,11 @@ func (r *attendanceRepository) GetByEventAndUser(ctx context.Context, eventID, u
 
 func (r *attendanceRepository) GetByEvent(ctx context.Context, eventID uuid.UUID) ([]domain.Attendance, error) {
 	query := `
-		SELECT id, event_id, user_id, registration_id, marked_at, marked_by, notes
-		FROM attendances
-		WHERE event_id = $1
-		ORDER BY marked_at DESC
+		SELECT a.id, r.event_id, r.user_id, a.registration_id, a.checked_in_at, NULL as marked_by, a.notes
+		FROM attendances a
+		JOIN registrations r ON a.registration_id = r.id
+		WHERE r.event_id = $1
+		ORDER BY a.checked_in_at DESC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, eventID)
@@ -182,7 +182,7 @@ func (r *attendanceRepository) GetByEvent(ctx context.Context, eventID uuid.UUID
 func (r *attendanceRepository) Update(ctx context.Context, attendance *domain.Attendance) error {
 	query := `
 		UPDATE attendances
-		SET notes = $1, marked_at = $2
+		SET notes = $1, checked_in_at = $2
 		WHERE id = $3
 	`
 
@@ -220,8 +220,8 @@ func (r *attendanceRepository) BulkCreate(ctx context.Context, attendances []dom
 	defer tx.Rollback()
 
 	stmt, err := tx.PrepareContext(ctx, `
-		INSERT INTO attendances (id, event_id, user_id, registration_id, marked_at, marked_by, notes)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO attendances (id, registration_id, checked_in_at, notes)
+		VALUES ($1, $2, $3, $4)
 	`)
 	if err != nil {
 		return fmt.Errorf("failed to prepare statement: %w", err)
@@ -238,11 +238,8 @@ func (r *attendanceRepository) BulkCreate(ctx context.Context, attendances []dom
 
 		_, err := stmt.ExecContext(ctx,
 			attendance.ID,
-			attendance.EventID,
-			attendance.UserID,
 			attendance.RegistrationID,
 			attendance.MarkedAt,
-			attendance.MarkedBy,
 			attendance.Notes,
 		)
 		if err != nil {
@@ -260,8 +257,9 @@ func (r *attendanceRepository) BulkCreate(ctx context.Context, attendances []dom
 func (r *attendanceRepository) CountByEvent(ctx context.Context, eventID uuid.UUID) (int, error) {
 	query := `
 		SELECT COUNT(*)
-		FROM attendances
-		WHERE event_id = $1
+		FROM attendances a
+		JOIN registrations r ON a.registration_id = r.id
+		WHERE r.event_id = $1
 	`
 
 	var count int

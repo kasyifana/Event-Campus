@@ -14,7 +14,7 @@ import (
 
 // WhitelistUsecase defines interface for whitelist business logic
 type WhitelistUsecase interface {
-	SubmitRequest(ctx context.Context, userID uuid.UUID, req *request.SubmitWhitelistRequest, documentPath string) error
+	SubmitRequest(ctx context.Context, userID uuid.UUID, req *request.SubmitWhitelistRequest, documentPath string) (*domain.WhitelistRequest, error)
 	GetMyRequest(ctx context.Context, userID uuid.UUID) (*response.WhitelistRequestResponse, error)
 	GetAllRequests(ctx context.Context, status string) ([]response.WhitelistRequestResponse, error)
 	GetPendingRequests(ctx context.Context) ([]response.WhitelistRequestResponse, error)
@@ -43,26 +43,26 @@ func NewWhitelistUsecase(
 	}
 }
 
-func (u *whitelistUsecase) SubmitRequest(ctx context.Context, userID uuid.UUID, req *request.SubmitWhitelistRequest, documentPath string) error {
+func (u *whitelistUsecase) SubmitRequest(ctx context.Context, userID uuid.UUID, req *request.SubmitWhitelistRequest, documentPath string) (*domain.WhitelistRequest, error) {
 	// Get user
 	user, err := u.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("user not found")
+		return nil, fmt.Errorf("user not found")
 	}
 
 	// Check if user is mahasiswa
 	if !user.IsMahasiswa() {
-		return fmt.Errorf("only mahasiswa can submit whitelist request")
+		return nil, fmt.Errorf("only mahasiswa can submit whitelist request")
 	}
 
 	// Check if user already has pending request
 	existingRequest, err := u.whitelistRepo.GetByUserID(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("failed to check existing request: %w", err)
+		return nil, fmt.Errorf("failed to check existing request: %w", err)
 	}
 
 	if existingRequest != nil && existingRequest.Status == domain.WhitelistStatusPending {
-		return fmt.Errorf("you already have a pending request")
+		return nil, fmt.Errorf("you already have a pending request")
 	}
 
 	// Create whitelist request
@@ -74,10 +74,10 @@ func (u *whitelistUsecase) SubmitRequest(ctx context.Context, userID uuid.UUID, 
 	}
 
 	if err := u.whitelistRepo.Create(ctx, whitelistRequest); err != nil {
-		return fmt.Errorf("failed to create whitelist request: %w", err)
+		return nil, fmt.Errorf("failed to create whitelist request: %w", err)
 	}
 
-	return nil
+	return whitelistRequest, nil
 }
 
 func (u *whitelistUsecase) GetMyRequest(ctx context.Context, userID uuid.UUID) (*response.WhitelistRequestResponse, error) {

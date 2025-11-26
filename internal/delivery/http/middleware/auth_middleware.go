@@ -11,12 +11,13 @@ import (
 func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get authorization header
+		// Get authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(401, gin.H{
 				"success": false,
 				"message": "Unauthorized",
-				"error":   "Missing authorization header",
+				"error":   "Authorization header is required",
 			})
 			c.Abort()
 			return

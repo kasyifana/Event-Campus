@@ -27,7 +27,7 @@ func NewWhitelistHandler(whitelistUsecase usecase.WhitelistUsecase, fileUploader
 // SubmitRequest handles whitelist request submission
 func (h *WhitelistHandler) SubmitRequest(c *gin.Context) {
 	// Get user ID from context
-	userIDStr, exists := c.Get("userID")
+	userIDInterface, exists := c.Get("userID")
 	if !exists {
 		c.JSON(401, gin.H{
 			"success": false,
@@ -37,12 +37,13 @@ func (h *WhitelistHandler) SubmitRequest(c *gin.Context) {
 		return
 	}
 
-	userID, err := uuid.Parse(userIDStr.(string))
-	if err != nil {
+	// Auth middleware stores userID as uuid.UUID, not string
+	userID, ok := userIDInterface.(uuid.UUID)
+	if !ok {
 		c.JSON(400, gin.H{
 			"success": false,
 			"message": "Invalid user ID",
-			"error":   err.Error(),
+			"error":   "User ID type mismatch",
 		})
 		return
 	}
@@ -97,7 +98,8 @@ func (h *WhitelistHandler) SubmitRequest(c *gin.Context) {
 	}
 
 	// Submit whitelist request
-	if err := h.whitelistUsecase.SubmitRequest(c.Request.Context(), userID, req, documentPath); err != nil {
+	whitelistReq, err := h.whitelistUsecase.SubmitRequest(c.Request.Context(), userID, req, documentPath)
+	if err != nil {
 		// Delete uploaded file if request fails
 		h.fileUploader.DeleteFile(documentPath)
 
@@ -112,13 +114,16 @@ func (h *WhitelistHandler) SubmitRequest(c *gin.Context) {
 	c.JSON(201, gin.H{
 		"success": true,
 		"message": "Whitelist request submitted successfully",
+		"data": gin.H{
+			"id": whitelistReq.ID,
+		},
 	})
 }
 
 // GetMyRequest gets current user's whitelist request
 func (h *WhitelistHandler) GetMyRequest(c *gin.Context) {
 	// Get user ID from context
-	userIDStr, exists := c.Get("userID")
+	userIDInterface, exists := c.Get("userID")
 	if !exists {
 		c.JSON(401, gin.H{
 			"success": false,
@@ -127,8 +132,8 @@ func (h *WhitelistHandler) GetMyRequest(c *gin.Context) {
 		return
 	}
 
-	userID, err := uuid.Parse(userIDStr.(string))
-	if err != nil {
+	userID, ok := userIDInterface.(uuid.UUID)
+	if !ok {
 		c.JSON(400, gin.H{
 			"success": false,
 			"message": "Invalid user ID",
@@ -196,7 +201,7 @@ func (h *WhitelistHandler) ReviewRequest(c *gin.Context) {
 	}
 
 	// Get reviewer ID from context
-	reviewerIDStr, exists := c.Get("userID")
+	reviewerIDInterface, exists := c.Get("userID")
 	if !exists {
 		c.JSON(401, gin.H{
 			"success": false,
@@ -205,8 +210,8 @@ func (h *WhitelistHandler) ReviewRequest(c *gin.Context) {
 		return
 	}
 
-	reviewerID, err := uuid.Parse(reviewerIDStr.(string))
-	if err != nil {
+	reviewerID, ok := reviewerIDInterface.(uuid.UUID)
+	if !ok {
 		c.JSON(400, gin.H{
 			"success": false,
 			"message": "Invalid reviewer ID",

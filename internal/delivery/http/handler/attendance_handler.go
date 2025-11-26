@@ -24,8 +24,9 @@ func NewAttendanceHandler(attendanceUsecase usecase.AttendanceUsecase) *Attendan
 // MarkAttendance handles single attendance marking
 func (h *AttendanceHandler) MarkAttendance(c *gin.Context) {
 	// Get organizer ID from context
-	organizerIDStr, _ := c.Get("userID")
-	organizerID, _ := uuid.Parse(organizerIDStr.(string))
+	// Get organizer ID from context
+	organizerIDInterface, _ := c.Get("userID")
+	organizerID, _ := organizerIDInterface.(uuid.UUID)
 
 	// Get event ID from URL
 	eventIDStr := c.Param("id")
@@ -76,8 +77,9 @@ func (h *AttendanceHandler) MarkAttendance(c *gin.Context) {
 // BulkMarkAttendance handles bulk attendance marking
 func (h *AttendanceHandler) BulkMarkAttendance(c *gin.Context) {
 	// Get organizer ID from context
-	organizerIDStr, _ := c.Get("userID")
-	organizerID, _ := uuid.Parse(organizerIDStr.(string))
+	// Get organizer ID from context
+	organizerIDInterface, _ := c.Get("userID")
+	organizerID, _ := organizerIDInterface.(uuid.UUID)
 
 	// Get event ID from URL
 	eventIDStr := c.Param("id")
@@ -137,8 +139,9 @@ func (h *AttendanceHandler) BulkMarkAttendance(c *gin.Context) {
 // GetEventAttendance gets attendance list for event
 func (h *AttendanceHandler) GetEventAttendance(c *gin.Context) {
 	// Get organizer ID from context
-	organizerIDStr, _ := c.Get("userID")
-	organizerID, _ := uuid.Parse(organizerIDStr.(string))
+	// Get organizer ID from context
+	organizerIDInterface, _ := c.Get("userID")
+	organizerID, _ := organizerIDInterface.(uuid.UUID)
 
 	// Get event ID from URL
 	eventIDStr := c.Param("id")

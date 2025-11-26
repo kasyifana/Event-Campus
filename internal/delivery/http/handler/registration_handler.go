@@ -22,8 +22,8 @@ func NewRegistrationHandler(registrationUsecase usecase.RegistrationUsecase) *Re
 // RegisterForEvent handles event registration
 func (h *RegistrationHandler) RegisterForEvent(c *gin.Context) {
 	// Get user ID from context
-	userIDStr, _ := c.Get("userID")
-	userID, _ := uuid.Parse(userIDStr.(string))
+	userIDInterface, _ := c.Get("userID")
+	userID, _ := userIDInterface.(uuid.UUID)
 
 	// Get event ID from URL
 	eventIDStr := c.Param("id")
@@ -36,7 +36,8 @@ func (h *RegistrationHandler) RegisterForEvent(c *gin.Context) {
 		return
 	}
 
-	if err := h.registrationUsecase.RegisterForEvent(c.Request.Context(), userID, eventID); err != nil {
+	registration, err := h.registrationUsecase.RegisterForEvent(c.Request.Context(), userID, eventID)
+	if err != nil {
 		c.JSON(400, gin.H{
 			"success": false,
 			"message": "Failed to register for event",
@@ -48,14 +49,18 @@ func (h *RegistrationHandler) RegisterForEvent(c *gin.Context) {
 	c.JSON(201, gin.H{
 		"success": true,
 		"message": "Registration successful",
+		"data": gin.H{
+			"registration_id": registration.ID,
+			"status":          registration.Status,
+		},
 	})
 }
 
 // CancelRegistration handles registration cancellation
 func (h *RegistrationHandler) CancelRegistration(c *gin.Context) {
 	// Get user ID from context
-	userIDStr, _ := c.Get("userID")
-	userID, _ := uuid.Parse(userIDStr.(string))
+	userIDInterface, _ := c.Get("userID")
+	userID, _ := userIDInterface.(uuid.UUID)
 
 	// Get registration ID from URL
 	registrationIDStr := c.Param("id")
@@ -86,8 +91,8 @@ func (h *RegistrationHandler) CancelRegistration(c *gin.Context) {
 // GetMyRegistrations gets user's registrations
 func (h *RegistrationHandler) GetMyRegistrations(c *gin.Context) {
 	// Get user ID from context
-	userIDStr, _ := c.Get("userID")
-	userID, _ := uuid.Parse(userIDStr.(string))
+	userIDInterface, _ := c.Get("userID")
+	userID, _ := userIDInterface.(uuid.UUID)
 
 	registrations, err := h.registrationUsecase.GetMyRegistrations(c.Request.Context(), userID)
 	if err != nil {
@@ -109,8 +114,8 @@ func (h *RegistrationHandler) GetMyRegistrations(c *gin.Context) {
 // GetEventRegistrations gets event's registrations (organizer only)
 func (h *RegistrationHandler) GetEventRegistrations(c *gin.Context) {
 	// Get organizer ID from context
-	organizerIDStr, _ := c.Get("userID")
-	organizerID, _ := uuid.Parse(organizerIDStr.(string))
+	organizerIDInterface, _ := c.Get("userID")
+	organizerID, _ := organizerIDInterface.(uuid.UUID)
 
 	// Get event ID from URL
 	eventIDStr := c.Param("id")
