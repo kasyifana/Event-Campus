@@ -1,5 +1,14 @@
 basePath: /api/v1
 definitions:
+  request.BulkMarkAttendanceRequest:
+    properties:
+      user_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - user_ids
+    type: object
   request.CreateEventRequest:
     properties:
       category:
@@ -59,6 +68,15 @@ definitions:
     - email
     - password
     type: object
+  request.MarkAttendanceRequest:
+    properties:
+      notes:
+        type: string
+      user_id:
+        type: string
+    required:
+    - user_id
+    type: object
   request.RegisterRequest:
     properties:
       email:
@@ -76,7 +94,58 @@ definitions:
     - password
     - phone_number
     type: object
-host: localhost:3000
+  request.ReviewWhitelistRequest:
+    properties:
+      admin_notes:
+        type: string
+      approved:
+        type: boolean
+    required:
+    - approved
+    type: object
+  request.UpdateEventRequest:
+    properties:
+      category:
+        enum:
+        - seminar
+        - workshop
+        - lomba
+        - konser
+        type: string
+      description:
+        type: string
+      end_date:
+        type: string
+      event_type:
+        enum:
+        - online
+        - offline
+        type: string
+      is_uii_only:
+        type: boolean
+      location:
+        type: string
+      max_participants:
+        minimum: 1
+        type: integer
+      registration_deadline:
+        type: string
+      start_date:
+        type: string
+      status:
+        enum:
+        - draft
+        - published
+        - ongoing
+        - completed
+        - cancelled
+        type: string
+      title:
+        type: string
+      zoom_link:
+        type: string
+    type: object
+host: localhost:8080
 info:
   contact:
     email: support@eventcampus.com
@@ -235,6 +304,34 @@ paths:
       tags:
       - Events
   /events/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an event (organizer only)
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Event deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid event ID or deletion failed
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete event
+      tags:
+      - Events
     get:
       consumes:
       - application/json
@@ -268,6 +365,459 @@ paths:
       summary: Get event by ID
       tags:
       - Events
+    put:
+      consumes:
+      - application/json
+      description: Update event details (organizer only)
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated event details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Event updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or update failed
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update event
+      tags:
+      - Events
+  /events/{id}/attendance:
+    get:
+      consumes:
+      - application/json
+      description: Get attendance list for a specific event (organizer only)
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Attendance retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid event ID or failed to get attendance
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get event attendance
+      tags:
+      - Attendance
+    post:
+      consumes:
+      - application/json
+      description: Mark attendance for a single user at an event (organizer only)
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Attendance details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.MarkAttendanceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Attendance marked successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or failed to mark
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mark single attendance
+      tags:
+      - Attendance
+  /events/{id}/attendance/bulk:
+    post:
+      consumes:
+      - application/json
+      description: Mark attendance for multiple users at once (organizer only)
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: List of user IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.BulkMarkAttendanceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bulk attendance marked successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or failed to mark
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mark bulk attendance
+      tags:
+      - Attendance
+  /events/{id}/poster:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload poster image for an event (organizer only)
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Poster image (JPG/PNG)
+        in: formData
+        name: poster
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Poster uploaded successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid file or upload failed
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload event poster
+      tags:
+      - Events
+  /events/{id}/publish:
+    post:
+      consumes:
+      - application/json
+      description: Publish a draft event to make it visible to users
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Event published successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid event ID or publish failed
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Publish event
+      tags:
+      - Events
+  /events/{id}/register:
+    post:
+      consumes:
+      - application/json
+      description: Register authenticated user for a specific event
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Registration successful
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid event ID or registration failed
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Register for an event
+      tags:
+      - Registrations
+  /events/{id}/registrations:
+    get:
+      consumes:
+      - application/json
+      description: Get all registrations for a specific event (organizer only)
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Registrations retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid event ID or failed to get registrations
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get event registrations
+      tags:
+      - Registrations
+  /events/my-events:
+    get:
+      consumes:
+      - application/json
+      description: Get all events created by authenticated organizer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Events retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get events
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my events
+      tags:
+      - Events
+  /registrations/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Cancel user's registration for an event
+      parameters:
+      - description: Registration ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Registration cancelled successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID or cancellation failed
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Cancel event registration
+      tags:
+      - Registrations
+  /registrations/my:
+    get:
+      consumes:
+      - application/json
+      description: Get all registrations for authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Registrations retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get registrations
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my registrations
+      tags:
+      - Registrations
+  /whitelist/{id}/review:
+    patch:
+      consumes:
+      - application/json
+      description: Approve or reject whitelist request (admin only)
+      parameters:
+      - description: Request ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Review decision
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ReviewWhitelistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Request reviewed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or review failed
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Review whitelist request
+      tags:
+      - Whitelist
+  /whitelist/my-request:
+    get:
+      consumes:
+      - application/json
+      description: Get authenticated user's whitelist request status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Request retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: No request found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my whitelist request
+      tags:
+      - Whitelist
+  /whitelist/request:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Submit request to become event organizer (requires PDF document)
+      parameters:
+      - description: Organization name
+        in: formData
+        name: organization_name
+        required: true
+        type: string
+      - description: Supporting document (PDF only)
+        in: formData
+        name: document
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Request submitted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or upload failed
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Submit whitelist request
+      tags:
+      - Whitelist
+  /whitelist/requests:
+    get:
+      consumes:
+      - application/json
+      description: Get all whitelist requests with optional status filter (admin only)
+      parameters:
+      - description: Filter by status (pending/approved/rejected)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Requests retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get requests
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all whitelist requests
+      tags:
+      - Whitelist
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

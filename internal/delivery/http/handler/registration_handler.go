@@ -20,6 +20,16 @@ func NewRegistrationHandler(registrationUsecase usecase.RegistrationUsecase) *Re
 }
 
 // RegisterForEvent handles event registration
+// @Summary Register for an event
+// @Description Register authenticated user for a specific event
+// @Tags Registrations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Event ID (UUID)"
+// @Success 201 {object} map[string]interface{} "Registration successful"
+// @Failure 400 {object} map[string]interface{} "Invalid event ID or registration failed"
+// @Router /events/{id}/register [post]
 func (h *RegistrationHandler) RegisterForEvent(c *gin.Context) {
 	// Get user ID from context
 	userIDInterface, _ := c.Get("userID")
@@ -57,6 +67,16 @@ func (h *RegistrationHandler) RegisterForEvent(c *gin.Context) {
 }
 
 // CancelRegistration handles registration cancellation
+// @Summary Cancel event registration
+// @Description Cancel user's registration for an event
+// @Tags Registrations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Registration ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Registration cancelled successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid ID or cancellation failed"
+// @Router /registrations/{id} [delete]
 func (h *RegistrationHandler) CancelRegistration(c *gin.Context) {
 	// Get user ID from context
 	userIDInterface, _ := c.Get("userID")
@@ -89,6 +109,15 @@ func (h *RegistrationHandler) CancelRegistration(c *gin.Context) {
 }
 
 // GetMyRegistrations gets user's registrations
+// @Summary Get my registrations
+// @Description Get all registrations for authenticated user
+// @Tags Registrations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "Registrations retrieved successfully"
+// @Failure 500 {object} map[string]interface{} "Failed to get registrations"
+// @Router /registrations/my [get]
 func (h *RegistrationHandler) GetMyRegistrations(c *gin.Context) {
 	// Get user ID from context
 	userIDInterface, _ := c.Get("userID")
@@ -112,6 +141,16 @@ func (h *RegistrationHandler) GetMyRegistrations(c *gin.Context) {
 }
 
 // GetEventRegistrations gets event's registrations (organizer only)
+// @Summary Get event registrations
+// @Description Get all registrations for a specific event (organizer only)
+// @Tags Registrations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Event ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Registrations retrieved successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid event ID or failed to get registrations"
+// @Router /events/{id}/registrations [get]
 func (h *RegistrationHandler) GetEventRegistrations(c *gin.Context) {
 	// Get organizer ID from context
 	organizerIDInterface, _ := c.Get("userID")

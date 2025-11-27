@@ -69,7 +69,8 @@ sudo systemctl enable jenkins
 
 # Get initial admin password
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
-##7895545a3ab94a6bad7690f1293a47d6
+## 7895545a3ab94a6bad7690f1293a47d6
+## 47effd3a2dd64300ada5e2ca4eebf55b bawang
 ```
 
 **Akses Jenkins:** `http://YOUR_VPS_IP:8080`

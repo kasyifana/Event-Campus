@@ -59,6 +59,7 @@ func (r *Router) Setup() *gin.Engine {
 	})
 
 	// Swagger documentation
+	// Access via: /docs/index.html
 	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API v1
@@ -76,6 +77,14 @@ func (r *Router) Setup() *gin.Engine {
 		protected.Use(middleware.AuthMiddleware(r.jwtSecret))
 		{
 			// User routes
+			// @Summary Get user profile
+			// @Description Get authenticated user's profile information
+			// @Tags User
+			// @Accept json
+			// @Produce json
+			// @Security BearerAuth
+			// @Success 200 {object} map[string]interface{} "Profile retrieved successfully"
+			// @Router /profile [get]
 			protected.GET("/profile", func(c *gin.Context) {
 				c.JSON(200, gin.H{
 					"success": true,

@@ -22,6 +22,17 @@ func NewAttendanceHandler(attendanceUsecase usecase.AttendanceUsecase) *Attendan
 }
 
 // MarkAttendance handles single attendance marking
+// @Summary Mark single attendance
+// @Description Mark attendance for a single user at an event (organizer only)
+// @Tags Attendance
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Event ID (UUID)"
+// @Param request body request.MarkAttendanceRequest true "Attendance details"
+// @Success 200 {object} map[string]interface{} "Attendance marked successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request or failed to mark"
+// @Router /events/{id}/attendance [post]
 func (h *AttendanceHandler) MarkAttendance(c *gin.Context) {
 	// Get organizer ID from context
 	// Get organizer ID from context
@@ -75,6 +86,17 @@ func (h *AttendanceHandler) MarkAttendance(c *gin.Context) {
 }
 
 // BulkMarkAttendance handles bulk attendance marking
+// @Summary Mark bulk attendance
+// @Description Mark attendance for multiple users at once (organizer only)
+// @Tags Attendance
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Event ID (UUID)"
+// @Param request body request.BulkMarkAttendanceRequest true "List of user IDs"
+// @Success 200 {object} map[string]interface{} "Bulk attendance marked successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request or failed to mark"
+// @Router /events/{id}/attendance/bulk [post]
 func (h *AttendanceHandler) BulkMarkAttendance(c *gin.Context) {
 	// Get organizer ID from context
 	// Get organizer ID from context
@@ -137,6 +159,16 @@ func (h *AttendanceHandler) BulkMarkAttendance(c *gin.Context) {
 }
 
 // GetEventAttendance gets attendance list for event
+// @Summary Get event attendance
+// @Description Get attendance list for a specific event (organizer only)
+// @Tags Attendance
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Event ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Attendance retrieved successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid event ID or failed to get attendance"
+// @Router /events/{id}/attendance [get]
 func (h *AttendanceHandler) GetEventAttendance(c *gin.Context) {
 	// Get organizer ID from context
 	// Get organizer ID from context

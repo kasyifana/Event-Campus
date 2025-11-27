@@ -161,6 +161,15 @@ func (h *EventHandler) GetEvent(c *gin.Context) {
 }
 
 // GetMyEvents gets organizer's events
+// @Summary Get my events
+// @Description Get all events created by authenticated organizer
+// @Tags Events
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "Events retrieved successfully"
+// @Failure 500 {object} map[string]interface{} "Failed to get events"
+// @Router /events/my-events [get]
 func (h *EventHandler) GetMyEvents(c *gin.Context) {
 	organizerIDInterface, _ := c.Get("userID")
 	organizerID, _ := organizerIDInterface.(uuid.UUID)
@@ -183,6 +192,17 @@ func (h *EventHandler) GetMyEvents(c *gin.Context) {
 }
 
 // UpdateEvent handles event update
+// @Summary Update event
+// @Description Update event details (organizer only)
+// @Tags Events
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Event ID (UUID)"
+// @Param request body request.UpdateEventRequest true "Updated event details"
+// @Success 200 {object} map[string]interface{} "Event updated successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request or update failed"
+// @Router /events/{id} [put]
 func (h *EventHandler) UpdateEvent(c *gin.Context) {
 	organizerIDInterface, _ := c.Get("userID")
 	organizerID, _ := organizerIDInterface.(uuid.UUID)
@@ -223,6 +243,17 @@ func (h *EventHandler) UpdateEvent(c *gin.Context) {
 }
 
 // UploadPoster handles poster upload
+// @Summary Upload event poster
+// @Description Upload poster image for an event (organizer only)
+// @Tags Events
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Event ID (UUID)"
+// @Param poster formData file true "Poster image (JPG/PNG)"
+// @Success 200 {object} map[string]interface{} "Poster uploaded successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid file or upload failed"
+// @Router /events/{id}/poster [post]
 func (h *EventHandler) UploadPoster(c *gin.Context) {
 	organizerIDInterface, _ := c.Get("userID")
 	organizerID, _ := organizerIDInterface.(uuid.UUID)
@@ -293,6 +324,16 @@ func (h *EventHandler) UploadPoster(c *gin.Context) {
 }
 
 // DeleteEvent handles event deletion
+// @Summary Delete event
+// @Description Delete an event (organizer only)
+// @Tags Events
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Event ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Event deleted successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid event ID or deletion failed"
+// @Router /events/{id} [delete]
 func (h *EventHandler) DeleteEvent(c *gin.Context) {
 	organizerIDInterface, _ := c.Get("userID")
 	organizerID, _ := organizerIDInterface.(uuid.UUID)
@@ -323,6 +364,16 @@ func (h *EventHandler) DeleteEvent(c *gin.Context) {
 }
 
 // PublishEvent handles event publishing
+// @Summary Publish event
+// @Description Publish a draft event to make it visible to users
+// @Tags Events
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Event ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Event published successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid event ID or publish failed"
+// @Router /events/{id}/publish [post]
 func (h *EventHandler) PublishEvent(c *gin.Context) {
 	organizerIDInterface, _ := c.Get("userID")
 	organizerID, _ := organizerIDInterface.(uuid.UUID)
