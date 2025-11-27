@@ -14,7 +14,7 @@
         },
         "version": "1.0"
     },
-    "host": "http://103.49.239.164:3000",
+    "host": "103.49.239.164:3000",
     "basePath": "/api/v1",
     "paths": {
         "/auth/login": {
