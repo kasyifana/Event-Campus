@@ -12,10 +12,30 @@ services:
     env_file:
       - ../.env
     volumes:
-      - ../storage:/root/storage
+      - ../storage:/app/storage
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
 networks:
   app-network:
     driver: bridge
+

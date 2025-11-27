@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+Jenkinsfile
+deployment/
+
+# Documentation
+*.md
+!README.md
+
+# Tests
+tests/
+*_test.go
+test_*.go
+
+# Development files
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+
+# Build artifacts
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Storage (runtime data)
+storage/
+tmp/
+
+# Dependencies (will be downloaded in container)
+vendor/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

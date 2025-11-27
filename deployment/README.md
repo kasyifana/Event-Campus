@@ -78,7 +78,41 @@ To update the application later, just run the deployment script again:
 ./deployment/deploy.sh
 ```
 
-This will:
-1. Pull the latest code from Git
-2. Rebuild the Docker image
-3. Restart the container with the new version
+## CI/CD with Jenkins
+
+This repository includes a `Jenkinsfile` for automated deployment.
+
+### Prerequisites for Jenkins
+If you are running Jenkins on this VPS or using this VPS as a Jenkins Agent:
+
+1. **Install Java** (required for Jenkins agent):
+   ```bash
+   sudo apt-get install -y openjdk-11-jre
+   ```
+
+2. **Add Jenkins user to Docker group**:
+   The Jenkins user (usually `jenkins`) needs permission to run Docker commands.
+   ```bash
+   sudo usermod -aG docker jenkins
+   # Restart Jenkins agent/service for changes to take effect
+   ```
+
+3. **Environment Variables**:
+   Ensure the `.env` file exists at `/opt/event-campus/.env` (or wherever you deploy).
+   The `Jenkinsfile` expects the app to be deployed to `/opt/event-campus`.
+   
+   Create the directory and set permissions:
+   ```bash
+   sudo mkdir -p /opt/event-campus/storage
+   sudo chown -R jenkins:jenkins /opt/event-campus
+   ```
+
+### Pipeline Steps
+The pipeline will:
+1. Checkout code
+2. Run tests (`go test`)
+3. Build Docker image
+4. Stop and remove old container
+5. Run new container using `docker run`
+6. Prune unused images
+
