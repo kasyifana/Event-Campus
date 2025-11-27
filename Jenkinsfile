@@ -101,7 +101,7 @@ pipeline {
                     sh """
                         docker run -d \
                             --name ${APP_NAME} \
-                            -p 8080:8080 \
+                            -p 3000:8080 \
                             --env-file ${DEPLOY_PATH}/.env \
                             -v ${DEPLOY_PATH}/storage:/app/storage \
                             --restart unless-stopped \
@@ -166,7 +166,7 @@ pipeline {
             echo '✅ =========================================='
             echo "Version: ${BUILD_VERSION}"
             echo "Container: ${APP_NAME}"
-            echo "Health: http://localhost:8080/health"
+            echo "Health: http://localhost:3000/health"
         }
         
         failure {
@@ -185,7 +185,7 @@ pipeline {
                     if docker images ${PREVIOUS_IMAGE} -q | grep -q .; then
                         docker run -d \
                             --name ${APP_NAME} \
-                            -p 8080:8080 \
+                            -p 3000:8080 \
                             --env-file ${DEPLOY_PATH}/.env \
                             -v ${DEPLOY_PATH}/storage:/app/storage \
                             --restart unless-stopped \

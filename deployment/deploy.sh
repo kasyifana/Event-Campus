@@ -76,7 +76,7 @@ sleep 5
 MAX_RETRIES=12
 RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if curl -f http://localhost:8080/health > /dev/null 2>&1; then
+    if curl -f http://localhost:3000/health > /dev/null 2>&1; then
         print_success "Application is healthy!"
         break
     fi
@@ -104,8 +104,8 @@ echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}✅ DEPLOYMENT SUCCESSFUL!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}API Endpoint:${NC} http://localhost:8080"
-echo -e "${BLUE}Health Check:${NC} http://localhost:8080/health"
+echo -e "${BLUE}API Endpoint:${NC} http://localhost:3000"
+echo -e "${BLUE}Health Check:${NC} http://localhost:3000/health"
 echo -e "${BLUE}View Logs:${NC} docker logs -f event-campus-api"
 echo ""
 
