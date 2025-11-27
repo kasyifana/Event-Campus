@@ -4,6 +4,7 @@ import (
 	"event-campus-backend/internal/dto/request"
 	"event-campus-backend/internal/usecase"
 	"event-campus-backend/internal/utils"
+	"fmt"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -319,6 +320,7 @@ func (h *EventHandler) UploadPoster(c *gin.Context) {
 		"message": "Poster uploaded successfully",
 		"data": gin.H{
 			"poster_path": posterPath,
+			"poster_url":  fmt.Sprintf("http://103.49.239.164:3000/files/%s", posterPath),
 		},
 	})
 }
