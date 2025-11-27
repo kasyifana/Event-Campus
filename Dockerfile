@@ -14,8 +14,14 @@ COPY go.mod go.sum ./
 # Download dependencies (cached if go.mod/go.sum unchanged)
 RUN go mod download && go mod verify
 
+# Install swag for swagger documentation
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
 # Copy source code
 COPY . .
+
+# Generate swagger docs
+RUN /go/bin/swag init -g cmd/api/main.go --output docs
 
 # Build binary with optimizations
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \

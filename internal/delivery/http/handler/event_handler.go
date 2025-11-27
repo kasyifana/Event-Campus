@@ -25,6 +25,17 @@ func NewEventHandler(eventUsecase usecase.EventUsecase, fileUploader *utils.File
 }
 
 // CreateEvent handles event creation
+// @Summary Create a new event
+// @Description Create a new event (organizer only). Poster can be uploaded separately.
+// @Tags Events
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body request.CreateEventRequest true "Event details"
+// @Success 201 {object} map[string]interface{} "Event created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request or failed to create"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Router /events [post]
 func (h *EventHandler) CreateEvent(c *gin.Context) {
 	// Get organizer ID from context
 	organizerIDInterface, _ := c.Get("userID")
@@ -62,6 +73,19 @@ func (h *EventHandler) CreateEvent(c *gin.Context) {
 }
 
 // GetAllEvents gets list of events with filters
+// @Summary Get all events
+// @Description Get list of events with optional filters (category, status, event_type, search)
+// @Tags Events
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param category query string false "Filter by category"
+// @Param status query string false "Filter by status (draft/published/ongoing/completed/cancelled)"
+// @Param event_type query string false "Filter by event type (online/offline/hybrid)"
+// @Param search query string false "Search by name or description"
+// @Success 200 {object} map[string]interface{} "Events retrieved successfully"
+// @Failure 500 {object} map[string]interface{} "Failed to get events"
+// @Router /events [get]
 func (h *EventHandler) GetAllEvents(c *gin.Context) {
 	filters := make(map[string]interface{})
 
@@ -97,6 +121,17 @@ func (h *EventHandler) GetAllEvents(c *gin.Context) {
 }
 
 // GetEvent gets event detail
+// @Summary Get event by ID
+// @Description Get detailed information about a specific event
+// @Tags Events
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Event ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Event retrieved successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid event ID"
+// @Failure 404 {object} map[string]interface{} "Event not found"
+// @Router /events/{id} [get]
 func (h *EventHandler) GetEvent(c *gin.Context) {
 	eventIDStr := c.Param("id")
 	eventID, err := uuid.Parse(eventIDStr)

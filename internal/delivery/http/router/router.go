@@ -4,7 +4,11 @@ import (
 	"event-campus-backend/internal/delivery/http/handler"
 	"event-campus-backend/internal/delivery/http/middleware"
 
+	_ "event-campus-backend/docs" // Swagger docs
+
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // Router holds all HTTP handlers
@@ -53,6 +57,9 @@ func (r *Router) Setup() *gin.Engine {
 			"message": "Event Campus API is running",
 		})
 	})
+
+	// Swagger documentation
+	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API v1
 	v1 := router.Group("/api/v1")

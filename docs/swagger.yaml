@@ -1,0 +1,277 @@
+basePath: /api/v1
+definitions:
+  request.CreateEventRequest:
+    properties:
+      category:
+        enum:
+        - seminar
+        - workshop
+        - lomba
+        - konser
+        type: string
+      description:
+        type: string
+      end_date:
+        type: string
+      event_type:
+        enum:
+        - online
+        - offline
+        type: string
+      is_uii_only:
+        type: boolean
+      location:
+        type: string
+      max_participants:
+        minimum: 1
+        type: integer
+      registration_deadline:
+        type: string
+      start_date:
+        type: string
+      status:
+        enum:
+        - draft
+        - published
+        type: string
+      title:
+        type: string
+      zoom_link:
+        type: string
+    required:
+    - category
+    - description
+    - end_date
+    - event_type
+    - max_participants
+    - registration_deadline
+    - start_date
+    - status
+    - title
+    type: object
+  request.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  request.RegisterRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone_number:
+        type: string
+    required:
+    - email
+    - full_name
+    - password
+    - phone_number
+    type: object
+host: localhost:3000
+info:
+  contact:
+    email: support@eventcampus.com
+    name: API Support
+  description: |-
+    REST API for Event Campus - Campus Event Management System
+
+    Features:
+    - User authentication (Register, Login)
+    - Event management (Create, Read, Update, Delete)
+    - Event registration
+    - Attendance tracking
+    - Whitelist/Organizer approval system
+    - Email notifications
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Event Campus API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful with JWT token
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Authentication failed
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login user
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account with email and password
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Registration successful
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or registration failed
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register a new user
+      tags:
+      - Authentication
+  /events:
+    get:
+      consumes:
+      - application/json
+      description: Get list of events with optional filters (category, status, event_type,
+        search)
+      parameters:
+      - description: Filter by category
+        in: query
+        name: category
+        type: string
+      - description: Filter by status (draft/published/ongoing/completed/cancelled)
+        in: query
+        name: status
+        type: string
+      - description: Filter by event type (online/offline/hybrid)
+        in: query
+        name: event_type
+        type: string
+      - description: Search by name or description
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Events retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get events
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all events
+      tags:
+      - Events
+    post:
+      consumes:
+      - application/json
+      description: Create a new event (organizer only). Poster can be uploaded separately.
+      parameters:
+      - description: Event details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Event created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or failed to create
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new event
+      tags:
+      - Events
+  /events/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific event
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Event retrieved successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid event ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Event not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get event by ID
+      tags:
+      - Events
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

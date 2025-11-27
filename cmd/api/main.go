@@ -16,6 +16,33 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// @title Event Campus API
+// @version 1.0
+// @description REST API for Event Campus - Campus Event Management System
+// @description
+// @description Features:
+// @description - User authentication (Register, Login)
+// @description - Event management (Create, Read, Update, Delete)
+// @description - Event registration
+// @description - Attendance tracking
+// @description - Whitelist/Organizer approval system
+// @description - Email notifications
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.email support@eventcampus.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:3000
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+
 func main() {
 	// Load configuration
 	cfg, err := config.LoadConfig()

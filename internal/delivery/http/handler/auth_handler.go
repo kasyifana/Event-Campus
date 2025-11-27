@@ -20,6 +20,15 @@ func NewAuthHandler(authUsecase usecase.AuthUsecase) *AuthHandler {
 }
 
 // Register handles user registration
+// @Summary Register a new user
+// @Description Register a new user account with email and password
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body request.RegisterRequest true "Registration details"
+// @Success 200 {object} map[string]interface{} "Registration successful"
+// @Failure 400 {object} map[string]interface{} "Invalid request or registration failed"
+// @Router /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req request.RegisterRequest
 
@@ -50,6 +59,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 // Login handles user login
+// @Summary Login user
+// @Description Authenticate user and return JWT token
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body request.LoginRequest true "Login credentials"
+// @Success 200 {object} map[string]interface{} "Login successful with JWT token"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 401 {object} map[string]interface{} "Authentication failed"
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req request.LoginRequest
 
