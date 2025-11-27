@@ -145,7 +145,7 @@ definitions:
       zoom_link:
         type: string
     type: object
-host: localhost:8080
+host: http://103.49.239.164:3000
 info:
   contact:
     email: support@eventcampus.com
