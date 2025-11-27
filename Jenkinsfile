@@ -41,6 +41,9 @@ pipeline {
             }
         }
         
+        // Test stage skipped - no test files in project
+        // Uncomment below if you add unit tests in the future
+        /*
         stage('Test') {
             steps {
                 echo '🧪 Running tests in Docker...'
@@ -57,6 +60,7 @@ pipeline {
                 }
             }
         }
+        */
         
         stage('Backup Current Version') {
             steps {
