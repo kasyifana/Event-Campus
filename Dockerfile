@@ -25,7 +25,7 @@ RUN /go/bin/swag init -g cmd/api/main.go --output docs
 
 # Build binary with optimizations
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -a -installsuffix cgo \
+    go build -installsuffix cgo \
     -ldflags="-w -s -X main.version=${BUILD_VERSION:-dev}" \
     -o main cmd/api/main.go
 
