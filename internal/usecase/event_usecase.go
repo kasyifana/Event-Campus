@@ -6,6 +6,7 @@ import (
 	"event-campus-backend/internal/dto/request"
 	"event-campus-backend/internal/dto/response"
 	"event-campus-backend/internal/repository"
+	"event-campus-backend/internal/utils"
 	"fmt"
 	"time"
 
@@ -24,21 +25,27 @@ type EventUsecase interface {
 }
 
 type eventUsecase struct {
-	eventRepo repository.EventRepository
-	userRepo  repository.UserRepository
-	baseURL   string
+	eventRepo        repository.EventRepository
+	userRepo         repository.UserRepository
+	registrationRepo repository.RegistrationRepository
+	emailSender      *utils.EmailSender
+	baseURL          string
 }
 
 // NewEventUsecase creates a new event usecase
 func NewEventUsecase(
 	eventRepo repository.EventRepository,
 	userRepo repository.UserRepository,
+	registrationRepo repository.RegistrationRepository,
+	emailSender *utils.EmailSender,
 	baseURL string,
 ) EventUsecase {
 	return &eventUsecase{
-		eventRepo: eventRepo,
-		userRepo:  userRepo,
-		baseURL:   baseURL,
+		eventRepo:        eventRepo,
+		userRepo:         userRepo,
+		registrationRepo: registrationRepo,
+		emailSender:      emailSender,
+		baseURL:          baseURL,
 	}
 }
 
@@ -171,6 +178,12 @@ func (u *eventUsecase) UpdateEvent(ctx context.Context, organizerID uuid.UUID, e
 		return fmt.Errorf("cannot update completed or cancelled events")
 	}
 
+	// Capture old values for change detection
+	oldStartDate := event.StartDate
+	oldEndDate := event.EndDate
+	oldLocation := event.Location
+	oldZoomLink := event.ZoomLink
+
 	// Validate dates if provided
 	if req.StartDate != nil {
 		if req.StartDate.Before(time.Now()) && event.Status == domain.StatusDraft {
@@ -226,9 +239,78 @@ func (u *eventUsecase) UpdateEvent(ctx context.Context, organizerID uuid.UUID, e
 		event.IsUIIOnly = *req.IsUIIOnly
 	}
 
+	// Detect changes
+	var changes []string
+	if !event.StartDate.Equal(oldStartDate) {
+		changes = append(changes, fmt.Sprintf("Waktu mulai berubah menjadi: %s", event.StartDate.Format("02 Jan 2006 15:04")))
+	}
+	if !event.EndDate.Equal(oldEndDate) {
+		changes = append(changes, fmt.Sprintf("Waktu selesai berubah menjadi: %s", event.EndDate.Format("02 Jan 2006 15:04")))
+	}
+
+	// Check location change
+	newLoc := ""
+	if event.Location != nil {
+		newLoc = *event.Location
+	}
+	oldLoc := ""
+	if oldLocation != nil {
+		oldLoc = *oldLocation
+	}
+	if newLoc != oldLoc {
+		changes = append(changes, fmt.Sprintf("Lokasi berubah menjadi: %s", newLoc))
+	}
+
+	// Check zoom link change
+	newZoom := ""
+	if event.ZoomLink != nil {
+		newZoom = *event.ZoomLink
+	}
+	oldZoom := ""
+	if oldZoomLink != nil {
+		oldZoom = *oldZoomLink
+	}
+	if newZoom != oldZoom {
+		changes = append(changes, "Link Zoom telah diperbarui")
+	}
+
 	// Update event
 	if err := u.eventRepo.Update(ctx, event); err != nil {
 		return fmt.Errorf("failed to update event: %w", err)
+	}
+
+	// Send notifications if there are critical changes and event is published
+	if len(changes) > 0 && event.Status == domain.StatusPublished {
+		go func() {
+			// Create a background context for email sending
+			bgCtx := context.Background()
+
+			// Get all registered users
+			registrations, err := u.registrationRepo.GetByEvent(bgCtx, eventID, domain.RegistrationStatusRegistered)
+			if err != nil {
+				fmt.Printf("Failed to get registrations for notification: %v\n", err)
+				return
+			}
+
+			for _, reg := range registrations {
+				user, err := u.userRepo.GetByID(bgCtx, reg.UserID)
+				if err != nil {
+					continue
+				}
+
+				if u.emailSender != nil {
+					if err := u.emailSender.SendEventUpdateNotification(
+						user.Email,
+						user.FullName,
+						event.Title,
+						event.StartDate,
+						changes,
+					); err != nil {
+						fmt.Printf("Failed to send update email to %s: %v\n", user.Email, err)
+					}
+				}
+			}
+		}()
 	}
 
 	return nil

@@ -117,6 +117,8 @@ func main() {
 	eventUsecase := usecase.NewEventUsecase(
 		eventRepo,
 		userRepo,
+		registrationRepo,
+		emailSender,
 		fmt.Sprintf("http://localhost:%s", cfg.Server.Port),
 	)
 	registrationUsecase := usecase.NewRegistrationUsecase(

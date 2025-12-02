@@ -497,3 +497,76 @@ func (e *EmailSender) SendWhitelistRejection(to, userName, reason string) error 
 
 	return e.SendEmail(to, subject, body.String())
 }
+
+// SendEventUpdateNotification sends event update notification email
+func (e *EmailSender) SendEventUpdateNotification(to, userName, eventTitle string, eventDate time.Time, changes []string) error {
+	subject := fmt.Sprintf("📢 Update Event: %s", eventTitle)
+
+	tmpl := `
+<!DOCTYPE html>
+<html>
+<head>
+	<style>
+		body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+		.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+		.header { background-color: #FFC107; color: #333; padding: 20px; text-align: center; }
+		.content { padding: 20px; background-color: #f9f9f9; }
+		.footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+		.info-box { background-color: white; padding: 15px; margin: 15px 0; border-left: 4px solid #FFC107; }
+		.changes-list { background-color: #fff3cd; padding: 15px; border-radius: 5px; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<h1>📢 Update Informasi Event</h1>
+		</div>
+		<div class="content">
+			<p>Halo <strong>{{.UserName}}</strong>,</p>
+			<p>Ada perubahan informasi penting untuk event yang Anda ikuti:</p>
+			
+			<div class="info-box">
+				<h2>{{.EventTitle}}</h2>
+				<p>📅 <strong>Tanggal Event:</strong> {{.EventDate}}</p>
+			</div>
+
+			<p><strong>Perubahan yang terjadi:</strong></p>
+			<div class="changes-list">
+				<ul>
+					{{range .Changes}}
+					<li>{{.}}</li>
+					{{end}}
+				</ul>
+			</div>
+
+			<p>Mohon cek kembali detail event di aplikasi Event Campus.</p>
+			<p>Terima kasih.</p>
+		</div>
+		<div class="footer">
+			<p>Event Campus - Platform Manajemen Event Kampus</p>
+		</div>
+	</div>
+</body>
+</html>
+	`
+
+	data := struct {
+		UserName   string
+		EventTitle string
+		EventDate  string
+		Changes    []string
+	}{
+		UserName:   userName,
+		EventTitle: eventTitle,
+		EventDate:  eventDate.Format("Monday, 02 January 2006 - 15:04 WIB"),
+		Changes:    changes,
+	}
+
+	var body bytes.Buffer
+	t := template.Must(template.New("email").Parse(tmpl))
+	if err := t.Execute(&body, data); err != nil {
+		return err
+	}
+
+	return e.SendEmail(to, subject, body.String())
+}
