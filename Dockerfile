@@ -27,7 +27,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -installsuffix cgo \
     -ldflags="-w -s -X main.version=${BUILD_VERSION:-dev}" \
-    -o main cmd/api/main.go
+    -v -p 1 -o main cmd/api/main.go
 
 # Runtime stage
 FROM alpine:latest
@@ -37,6 +37,9 @@ RUN apk --no-cache add ca-certificates tzdata curl
 
 # Set timezone to Asia/Jakarta
 ENV TZ=Asia/Jakarta
+
+# Optimize GC for low memory environment
+ENV GOGC=10
 
 WORKDIR /app
 
