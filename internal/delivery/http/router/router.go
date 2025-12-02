@@ -123,6 +123,7 @@ func (r *Router) Setup() *gin.Engine {
 				events.POST("/:id/poster", middleware.RequireOrganisasi(), r.eventHandler.UploadPoster)
 				events.DELETE("/:id", middleware.RequireOrganisasi(), r.eventHandler.DeleteEvent)
 				events.POST("/:id/publish", middleware.RequireOrganisasi(), r.eventHandler.PublishEvent)
+				events.POST("/:id/reminders", middleware.RequireOrganisasi(), r.eventHandler.SendReminders)
 
 				// Registration routes
 				events.POST("/:id/register", r.registrationHandler.RegisterForEvent)

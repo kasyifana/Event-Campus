@@ -404,3 +404,43 @@ func (h *EventHandler) PublishEvent(c *gin.Context) {
 		"message": "Event published successfully",
 	})
 }
+
+// SendReminders handles manual reminder sending
+// @Summary Send manual reminders
+// @Description Send H-1 reminder emails to all registered users manually (organizer only)
+// @Tags Events
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Event ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Reminders sent successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid event ID or failed to send"
+// @Router /events/{id}/reminders [post]
+func (h *EventHandler) SendReminders(c *gin.Context) {
+	organizerIDInterface, _ := c.Get("userID")
+	organizerID, _ := organizerIDInterface.(uuid.UUID)
+
+	eventIDStr := c.Param("id")
+	eventID, err := uuid.Parse(eventIDStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"success": false,
+			"message": "Invalid event ID",
+		})
+		return
+	}
+
+	if err := h.eventUsecase.SendReminders(c.Request.Context(), organizerID, eventID); err != nil {
+		c.JSON(400, gin.H{
+			"success": false,
+			"message": "Failed to send reminders",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"success": true,
+		"message": "Reminders sent successfully",
+	})
+}

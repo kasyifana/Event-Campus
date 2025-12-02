@@ -22,6 +22,7 @@ type EventUsecase interface {
 	UpdateEvent(ctx context.Context, organizerID uuid.UUID, eventID uuid.UUID, req *request.UpdateEventRequest, posterPath *string) error
 	DeleteEvent(ctx context.Context, organizerID uuid.UUID, eventID uuid.UUID) error
 	PublishEvent(ctx context.Context, organizerID uuid.UUID, eventID uuid.UUID) error
+	SendReminders(ctx context.Context, organizerID uuid.UUID, eventID uuid.UUID) error
 }
 
 type eventUsecase struct {
@@ -371,6 +372,73 @@ func (u *eventUsecase) PublishEvent(ctx context.Context, organizerID uuid.UUID, 
 	if err := u.eventRepo.UpdateStatus(ctx, eventID, domain.StatusPublished); err != nil {
 		return fmt.Errorf("failed to publish event: %w", err)
 	}
+
+	return nil
+}
+
+func (u *eventUsecase) SendReminders(ctx context.Context, organizerID uuid.UUID, eventID uuid.UUID) error {
+	// Get event
+	event, err := u.eventRepo.GetByID(ctx, eventID)
+	if err != nil {
+		return fmt.Errorf("event not found")
+	}
+
+	// Check ownership
+	if event.OrganizerID != organizerID {
+		return fmt.Errorf("you don't have permission to send reminders for this event")
+	}
+
+	// Can only send reminders for published events
+	if event.Status != domain.StatusPublished {
+		return fmt.Errorf("can only send reminders for published events")
+	}
+
+	// Get all registered users
+	registrations, err := u.registrationRepo.GetByEvent(ctx, eventID, domain.RegistrationStatusRegistered)
+	if err != nil {
+		return fmt.Errorf("failed to get registrations: %w", err)
+	}
+
+	if len(registrations) == 0 {
+		return fmt.Errorf("no registered participants found")
+	}
+
+	// Send reminders asynchronously
+	go func() {
+		bgCtx := context.Background()
+		sentCount := 0
+
+		for _, reg := range registrations {
+			user, err := u.userRepo.GetByID(bgCtx, reg.UserID)
+			if err != nil {
+				continue
+			}
+
+			if u.emailSender != nil {
+				// Handle nil location for online events
+				location := ""
+				if event.Location != nil {
+					location = *event.Location
+				}
+
+				err := u.emailSender.SendReminderEmail(
+					user.Email,
+					user.FullName,
+					event.Title,
+					event.StartDate,
+					location,
+					event.ZoomLink,
+					reg.ID.String(),
+				)
+				if err != nil {
+					fmt.Printf("Failed to send manual reminder to %s: %v\n", user.Email, err)
+					continue
+				}
+				sentCount++
+			}
+		}
+		fmt.Printf("✅ Manual reminders sent for event %s: %d emails\n", event.Title, sentCount)
+	}()
 
 	return nil
 }
